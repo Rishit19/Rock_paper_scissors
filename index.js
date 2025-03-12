@@ -1,17 +1,25 @@
 /**
- * Simple Rock Paper Scissors game implementation
- * The user plays against a computer that makes random choices
+ * Rock Paper Scissors game implementation
  */
 
-// Game options
+// Game options and rules
 const OPTIONS = ['rock', 'paper', 'scissors'];
-
-// Rules for who wins (key beats value)
 const RULES = {
   rock: 'scissors',
   paper: 'rock',
   scissors: 'paper'
 };
+
+// Game state
+let playerScore = 0;
+let computerScore = 0;
+const WINNING_SCORE = 5;
+
+// DOM elements references
+let resultDiv;
+let scoreDiv;
+let gameOverDiv;
+let buttons;
 
 /**
  * Get computer's random choice
@@ -25,90 +33,113 @@ function getComputerChoice() {
 /**
  * Determine the winner of a round
  * @param {string} playerSelection - Player's choice
- * @param {string} computerSelection - Computer's choice
  * @returns {string} - Result message
  */
-function playRound(playerSelection, computerSelection) {
-  // Normalize player input to lowercase
-  playerSelection = playerSelection.toLowerCase();
-  
-  // Validate player selection
-  if (!OPTIONS.includes(playerSelection)) {
-    return "Invalid choice! Please choose rock, paper, or scissors.";
-  }
+function playRound(playerSelection) {
+  const computerSelection = getComputerChoice();
   
   // Check for tie
   if (playerSelection === computerSelection) {
-    return `Tie! Both chose ${playerSelection}.`;
+    displayResult(`Tie! Both chose ${playerSelection}.`);
+    return;
   }
   
   // Check who wins
   if (RULES[playerSelection] === computerSelection) {
-    return `You win! ${playerSelection} beats ${computerSelection}.`;
+    playerScore++;
+    displayResult(`You win! ${playerSelection} beats ${computerSelection}.`);
   } else {
-    return `You lose! ${computerSelection} beats ${playerSelection}.`;
+    computerScore++;
+    displayResult(`You lose! ${computerSelection} beats ${playerSelection}.`);
+  }
+  
+  // Update score display
+  updateScore();
+  
+  // Check if game over
+  if (playerScore >= WINNING_SCORE || computerScore >= WINNING_SCORE) {
+    endGame();
   }
 }
 
 /**
- * Play a full game of Rock Paper Scissors
- * @param {number} rounds - Number of rounds to play
+ * Display the round result in the UI
+ * @param {string} message - Result message to display
  */
-function game(rounds = 5) {
-  let playerScore = 0;
-  let computerScore = 0;
-  
-  for (let i = 0; i < rounds; i++) {
-    // Get player's choice (in a real implementation, you might use DOM or prompt)
-    const playerChoice = prompt(`Round ${i + 1}/${rounds}: Enter rock, paper, or scissors:`);
-    
-    // Exit if player cancels
-    if (playerChoice === null) {
-      console.log("Game canceled.");
-      return;
-    }
-    
-    const computerChoice = getComputerChoice();
-    const result = playRound(playerChoice, computerChoice);
-    
-    console.log(result);
-    
-    // Update scores
-    if (result.includes("win")) {
-      playerScore++;
-    } else if (result.includes("lose")) {
-      computerScore++;
-    }
-  }
-  
-  // Determine the overall winner
-  console.log("\n--- FINAL SCORE ---");
-  console.log(`You: ${playerScore} | Computer: ${computerScore}`);
-  
-  if (playerScore > computerScore) {
-    console.log("Congratulations! You won the game!");
-  } else if (playerScore < computerScore) {
-    console.log("Sorry, you lost the game!");
-  } else {
-    console.log("The game ended in a tie!");
-  }
+function displayResult(message) {
+  resultDiv.textContent = message;
 }
 
-// Function to play a single round (alternative to the multi-round game)
-function playSingleRound() {
-  const playerChoice = prompt("Enter rock, paper, or scissors:");
-  
-  if (playerChoice === null) {
-    return "Game canceled.";
-  }
-  
-  const computerChoice = getComputerChoice();
-  return playRound(playerChoice, computerChoice);
+/**
+ * Update the score display in the UI
+ */
+function updateScore() {
+  scoreDiv.textContent = `Score: You ${playerScore} - ${computerScore} Computer`;
 }
 
-// Example usage:
-// 1. To play a 5-round game:
-// game(5);
+/**
+ * End the game and display the final result
+ */
+function endGame() {
+  const winner = playerScore >= WINNING_SCORE ? 'You win the game!' : 'Computer wins the game!';
+  gameOverDiv.textContent = `Game Over! ${winner}`;
+  
+  // Disable the game buttons
+  disableButtons();
+  
+  // Add reset button
+  const resetButton = document.createElement('button');
+  resetButton.textContent = 'Play Again';
+  resetButton.id = 'reset-button';
+  resetButton.addEventListener('click', resetGame);
+  gameOverDiv.appendChild(resetButton);
+}
 
-// 2. To play a single round:
-// console.log(playSingleRound());
+/**
+ * Disable all game buttons
+ */
+function disableButtons() {
+  buttons.forEach(button => {
+    button.disabled = true;
+  });
+}
+
+/**
+ * Enable all game buttons
+ */
+function enableButtons() {
+  buttons.forEach(button => {
+    button.disabled = false;
+  });
+}
+
+/**
+ * Reset the game to initial state
+ */
+function resetGame() {
+  playerScore = 0;
+  computerScore = 0;
+  updateScore();
+  displayResult('Choose rock, paper, or scissors to start a new game!');
+  gameOverDiv.textContent = '';
+  enableButtons();
+}
+
+/**
+ * Initialize the game UI and event listeners
+ */
+function initGame() {
+  // Get DOM elements
+  resultDiv = document.getElementById('result');
+  scoreDiv = document.getElementById('score');
+  gameOverDiv = document.getElementById('game-over');
+  
+  // Get all choice buttons and add event listeners
+  buttons = Array.from(document.querySelectorAll('.buttons-container button'));
+  buttons.forEach(button => {
+    button.addEventListener('click', () => playRound(button.id));
+  });
+}
+
+// Initialize the game when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', initGame);
